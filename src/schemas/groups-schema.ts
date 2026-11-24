@@ -216,3 +216,72 @@ export const cardProgressSchema: CollectionSchema = {
     admin: { read: 'own', create: true, update: 'own', delete: 'own' },
   },
 }
+
+/**
+ * Live quiz state. Written only by actions; the server is the source of truth
+ * for timing and points. `answers[i]` (the correct choice) is filled in only
+ * when question i is revealed — the key lives in `quiz_keys`, which members
+ * cannot read, so nothing in the browser leaks it early.
+ */
+export const quizSessionsSchema: CollectionSchema = {
+  name: 'quiz_sessions',
+  columns: [
+    { name: 'groupId', storage: 'text', interpretation: 'plain', required: true, immutable: true },
+    { name: 'hostId', storage: 'text', interpretation: 'plain', required: true, immutable: true },
+    { name: 'hostName', storage: 'text', interpretation: 'plain' },
+    {
+      name: 'status',
+      storage: 'text',
+      interpretation: { kind: 'select', options: ['lobby', 'question', 'reveal', 'done'] },
+      default: 'lobby',
+    },
+    // [{ cardId, prompt, choices: [4 strings] }]
+    { name: 'items', storage: 'text', interpretation: { kind: 'json' } },
+    // revealed correct indices, index-aligned with items (null until revealed)
+    { name: 'answers', storage: 'text', interpretation: { kind: 'json' } },
+    // { [userId]: { name, total, last: { choice, correct, points } | null } } — updated at each reveal
+    { name: 'scores', storage: 'text', interpretation: { kind: 'json' } },
+    // per revealed question: { [choiceIndex]: count }
+    { name: 'tallies', storage: 'text', interpretation: { kind: 'json' } },
+    { name: 'currentIndex', storage: 'number', interpretation: 'plain', default: -1 },
+    { name: 'questionStartedAt', storage: 'number', interpretation: 'plain' },
+    { name: 'questionSeconds', storage: 'number', interpretation: 'plain', default: 20 },
+  ],
+  teamField: 'groupId',
+  permissions: {
+    '*': closed,
+    viewer: closed,
+    member: { read: 'team', create: false, update: false, delete: false },
+    admin: adminTeam,
+  },
+}
+
+/** Answer key per session. Server-only. */
+export const quizKeysSchema: CollectionSchema = {
+  name: 'quiz_keys',
+  columns: [
+    { name: 'sessionId', storage: 'text', interpretation: 'plain', required: true, immutable: true },
+    { name: 'groupId', storage: 'text', interpretation: 'plain', required: true, immutable: true },
+    { name: 'answers', storage: 'text', interpretation: { kind: 'json' } },
+  ],
+  uniqueOn: ['sessionId'],
+  permissions: { '*': closed, viewer: closed, member: closed, admin: { read: false, create: true, update: true, delete: true } },
+}
+
+/** One row per (session, question, user). Server-only until aggregated into scores at reveal. */
+export const quizAnswersSchema: CollectionSchema = {
+  name: 'quiz_answers',
+  columns: [
+    { name: 'sessionId', storage: 'text', interpretation: 'plain', required: true, immutable: true },
+    { name: 'groupId', storage: 'text', interpretation: 'plain', required: true, immutable: true },
+    { name: 'questionIndex', storage: 'number', interpretation: 'plain', required: true, immutable: true },
+    { name: 'userId', storage: 'text', interpretation: 'plain', required: true, immutable: true },
+    { name: 'userName', storage: 'text', interpretation: 'plain' },
+    { name: 'choiceIndex', storage: 'number', interpretation: 'plain' },
+    { name: 'correct', storage: 'number', interpretation: 'plain' },
+    { name: 'points', storage: 'number', interpretation: 'plain' },
+    { name: 'elapsedMs', storage: 'number', interpretation: 'plain' },
+  ],
+  uniqueOn: ['sessionId', 'questionIndex', 'userId'],
+  permissions: { '*': closed, viewer: closed, member: closed, admin: { read: false, create: true, update: true, delete: true } },
+}

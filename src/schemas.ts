@@ -12,6 +12,9 @@ import {
   aiUsageSchema,
   cardProgressSchema,
   cardsSchema,
+  quizAnswersSchema,
+  quizKeysSchema,
+  quizSessionsSchema,
   suggestionsSchema,
   groupsSchema,
   joinAttemptsSchema,
@@ -30,4 +33,7 @@ export const schemas: CollectionSchema[] = [
   suggestionsSchema,
   cardsSchema,
   cardProgressSchema,
+  quizSessionsSchema,
+  quizKeysSchema,
+  quizAnswersSchema,
 ]
