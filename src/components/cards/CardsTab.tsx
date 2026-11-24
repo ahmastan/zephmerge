@@ -48,7 +48,7 @@ export function CardsTab({ groupId, myId }: { groupId: string; myId: string }) {
   const cardsQ = useQuery<Card>('cards', { where: { groupId }, orderBy: 'order', orderDir: 'asc' })
   // Read permission is own-only, so these are the caller's rows.
   const progressQ = useQuery<CardProgress>('card_progress', { where: { groupId } })
-  const { ready, create, put } = useMutations<CardProgress>('card_progress')
+  const { ready, createConfirmed: create, putConfirmed: put } = useMutations<CardProgress>('card_progress')
   const toast = useToast()
 
   const [now, setNow] = useState(() => new Date())
@@ -449,7 +449,7 @@ function StudySession({
         </Button>
       </div>
 
-      <div className="zc-scene">
+      <div>
         <div key={index} className={cn(phase === 'leaving' ? 'zc-leave' : 'zc-enter')}>
           <div
             ref={cardRef}
@@ -465,7 +465,7 @@ function StudySession({
                 flip()
               }
             }}
-            className="cursor-pointer rounded-2xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="zc-scene cursor-pointer rounded-2xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             <div className="zc-flipper" data-flipped={flipped}>
               <section
