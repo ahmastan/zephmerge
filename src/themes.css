@@ -1,46 +1,45 @@
 /*
- * Theme overrides — applied via <html data-theme="<id>">.
+ * Zephmerge themes — applied via <html data-theme="<id>">.
  *
- * Default values live in `styles.css` (@theme block, slate — a neutral
- * placeholder, not a design choice). Every app should define its OWN theme
- * before first deploy: copy the example block below, rename the selector,
- * and set colors that fit the product. Shape comes from `--radius`.
- *
- * To add a theme:
- *   1. Add a `[data-theme="my-id"] { ... }` block overriding the shadcn
- *      tokens below. If the theme is light, include `color-scheme: light;`
- *      so native form controls (calendar icons, scrollbars) match.
- *   2. Add an entry to `src/themes.ts` so it shows up in the typed catalog.
- *   3. Add the theme's --color-background to the first-paint <style> block
- *      in index.html so the pre-CSS frame matches (no white flash).
- *   4. Switch to it via `data-theme` on <html> in index.html.
+ * `zeph-light` is the default and lives in the @theme block in styles.css
+ * (this selector only pins color-scheme). `zeph-dark` overrides every token.
+ * The pre-paint script in index.html picks one from localStorage or the
+ * system preference, so there is no flash.
  */
 
-/* Paper — light example theme; shows the full token contract incl.
- * `color-scheme: light`. Replace or delete it once the app has its own. */
-[data-theme="paper"] {
+[data-theme="zeph-light"] {
   color-scheme: light;
-  --color-background: #ffffff;
-  --color-foreground: #0a0a0a;
-  --color-card: #fafafa;
-  --color-card-foreground: #0a0a0a;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #0a0a0a;
-  --color-primary: #171717;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #f5f5f5;
-  --color-secondary-foreground: #0a0a0a;
-  --color-muted: #f5f5f5;
-  --color-muted-foreground: #525252;
-  --color-accent: #e5e5e5;
-  --color-accent-foreground: #0a0a0a;
-  --color-destructive: #dc2626;
+}
+
+[data-theme="zeph-dark"] {
+  color-scheme: dark;
+  --color-background: #0b0d0e;
+  --color-foreground: #e8ecec;
+  --color-card: #121617;
+  --color-card-foreground: #e8ecec;
+  --color-popover: #151a1b;
+  --color-popover-foreground: #e8ecec;
+  --color-primary: #2ee6b0;
+  --color-primary-foreground: #04261c;
+  --color-secondary: #1a1f20;
+  --color-secondary-foreground: #e8ecec;
+  --color-muted: #171c1d;
+  --color-muted-foreground: #96a0a1;
+  --color-accent: #1c2223;
+  --color-accent-foreground: #e8ecec;
+  --color-destructive: #f2555a;
   --color-destructive-foreground: #ffffff;
-  --color-border: #e5e5e5;
-  --color-input: #e5e5e5;
-  --color-ring: #171717;
-  --shadow-card: 0 1px 2px 0 rgba(0, 0, 0, 0.016);
-  --shadow-card-hover: 0 2px 8px 0 rgba(0, 0, 0, 0.032);
-  --color-shell: #fafafa;
-  --color-shell-panel: #ffffff;
+  --color-border: #232a2b;
+  --color-input: #2a3233;
+  --color-ring: #2ee6b0;
+  --color-brand-ink: #4ff0c2;
+  --color-brand-soft: #0f2c24;
+  --color-brand-soft-foreground: #8ff5d6;
+  --color-danger-soft: #2c1415;
+  --color-danger-ink: #ff8a8e;
+  --color-sidebar: #0f1213;
+  --shadow-card: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
+  --color-shell: #0b0d0e;
+  --color-shell-panel: #121617;
 }
