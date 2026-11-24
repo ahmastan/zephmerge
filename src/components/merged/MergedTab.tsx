@@ -33,10 +33,15 @@ export function MergedTab({ groupId, group, myName, onGoToNotes }: Props) {
   const [confirmRemerge, setConfirmRemerge] = useState(false)
   const [pending, setPending] = useState<Record<string, 'accept' | 'reject'>>({})
   const [filter, setFilter] = useState<'open' | 'resolved'>('open')
+  const [reveal, setReveal] = useState(0)
   const docRef = useRef<HTMLDivElement>(null)
   const toast = useToast()
 
   const editors = peers.filter((p) => (p.state as { editing?: boolean })?.editing)
+  // Keep the last non-empty list so the pill fades out with its content intact.
+  const lastEditors = useRef(editors)
+  if (editors.length > 0) lastEditors.current = editors
+  const shownEditors = editors.length > 0 ? editors : lastEditors.current
   useEffect(() => {
     updateState({ editing: mode === 'edit' })
   }, [mode, updateState])
@@ -65,6 +70,7 @@ export function MergedTab({ groupId, group, myName, onGoToNotes }: Props) {
     if (!r.success) return toast.error('Merge didn’t finish', r.error)
     setMode('read')
     setFilter('open')
+    setReveal((n) => n + 1)
     toast.success(
       'Notes merged',
       r.data.kept === 0 ? 'No conflicts found.' : `${r.data.kept} ${r.data.kept === 1 ? 'suggestion' : 'suggestions'} to review.`,
@@ -141,16 +147,18 @@ export function MergedTab({ groupId, group, myName, onGoToNotes }: Props) {
               </button>
             ))}
           </div>
-          {editors.length > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft py-0.5 pl-1 pr-2 text-[11px] font-medium text-brand-soft-foreground">
-              <span className="flex -space-x-1">
-                {editors.slice(0, 3).map((p) => (
-                  <MemberAvatar key={p.userId} userId={p.userId} name={p.userName} size="xs" tooltip={false} />
-                ))}
-              </span>
-              {editors.length} editing
+          <span
+            data-visible={editors.length > 0}
+            aria-hidden={editors.length === 0}
+            className="presence-pill inline-flex items-center gap-1.5 rounded-full bg-brand-soft py-0.5 pl-1 pr-2 text-[11px] font-medium text-brand-soft-foreground"
+          >
+            <span className="flex -space-x-1">
+              {shownEditors.slice(0, 3).map((p) => (
+                <MemberAvatar key={p.userId} userId={p.userId} name={p.userName} size="xs" tooltip={false} />
+              ))}
             </span>
-          )}
+            {Math.max(shownEditors.length, 1)} editing
+          </span>
           <span className="ml-auto text-xs text-muted-foreground">
             {group.lastMergedAt && `Merged ${timeAgo(group.lastMergedAt)}${group.lastMergedBy ? ` by ${group.lastMergedBy}` : ''}`}
           </span>
@@ -183,7 +191,12 @@ export function MergedTab({ groupId, group, myName, onGoToNotes }: Props) {
             </p>
           </div>
         ) : (
-          <div ref={docRef} data-testid="merged-doc" className="merged-prose px-6 py-5 md:px-8 md:py-7">
+          <div
+            ref={docRef}
+            key={reveal}
+            data-testid="merged-doc"
+            className={cn('merged-prose px-6 py-5 md:px-8 md:py-7', reveal > 0 && 'merged-reveal')}
+          >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
           </div>
         )}

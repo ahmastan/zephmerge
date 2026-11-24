@@ -15,7 +15,7 @@ function clean(raw: string): string {
 interface Props {
   value: string
   onChange: (value: string) => void
-  /** Fires when the 6th character is entered. */
+  /** Fires when the 6th character is entered (e.g. to move focus to Join). */
   onComplete?: (value: string) => void
   /** Bump this number to replay the shake (e.g. after a wrong code). */
   errorKey?: number

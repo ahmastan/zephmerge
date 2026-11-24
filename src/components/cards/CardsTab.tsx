@@ -5,6 +5,7 @@ import { callAction } from '@/lib/api'
 import { isDue, MAX_BOX, nextDueAt, orderForStudy, review, type LeitnerProgress } from '@/lib/leitner'
 import type { Card, CardProgress } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import { useCountUp } from '@/lib/useCountUp'
 import { Badge, Button, ConfirmModal, EmptyState, useToast } from '../ui'
 import './cards.css'
 
@@ -576,22 +577,40 @@ function SessionComplete({
   onExit: () => void
 }) {
   const when = timeUntil(nextReview, now)
+  const gotShown = useCountUp(got)
+  const missedShown = useCountUp(missed)
+  const celebrate = got > 0 && got >= missed
   return (
     <div className="zc-enter mx-auto flex w-full max-w-md flex-col items-center rounded-2xl border border-border bg-card px-6 py-10 text-center">
-      <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-brand-soft text-brand-soft-foreground">
-        <PartyPopper className="size-6" aria-hidden />
+      <div className="relative mb-4">
+        {celebrate && (
+          <>
+            <span aria-hidden className="celebrate-ring absolute inset-0 rounded-2xl ring-2 ring-primary" />
+            {[0, 60, 120, 180, 240, 300].map((deg) => (
+              <span
+                key={deg}
+                aria-hidden
+                className="celebrate-spark absolute left-1/2 top-1/2 -ml-[3px] -mt-[3px] size-1.5 rounded-full bg-primary"
+                style={{ ['--angle' as string]: `${deg}deg` }}
+              />
+            ))}
+          </>
+        )}
+        <div className="celebrate-icon relative flex size-12 items-center justify-center rounded-2xl bg-brand-soft text-brand-soft-foreground">
+          <PartyPopper className="size-6" aria-hidden />
+        </div>
       </div>
-      <h2 ref={headingRef} tabIndex={-1} className="text-lg font-semibold outline-none">
-        Session complete
+      <h2 ref={headingRef} tabIndex={-1} className="rise-in text-lg font-semibold outline-none" style={{ animationDelay: '80ms' }}>
+        {celebrate ? 'Nice session' : 'Session complete'}
       </h2>
       <dl className="mt-5 grid w-full grid-cols-2 gap-3">
-        <div className="rounded-xl bg-brand-soft p-3 text-brand-soft-foreground">
+        <div className="rise-in rounded-xl bg-brand-soft p-3 text-brand-soft-foreground" style={{ animationDelay: '120ms' }}>
           <dt className="text-xs font-medium">Got it</dt>
-          <dd className="text-2xl font-semibold tabular-nums">{got}</dd>
+          <dd className="text-2xl font-semibold tabular-nums" aria-label={String(got)}>{gotShown}</dd>
         </div>
-        <div className="rounded-xl bg-danger-soft p-3 text-danger-ink">
+        <div className="rise-in rounded-xl bg-danger-soft p-3 text-danger-ink" style={{ animationDelay: '160ms' }}>
           <dt className="text-xs font-medium">Missed</dt>
-          <dd className="text-2xl font-semibold tabular-nums">{missed}</dd>
+          <dd className="text-2xl font-semibold tabular-nums" aria-label={String(missed)}>{missedShown}</dd>
         </div>
       </dl>
       {when && (

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LIMITS } from '../config'
 import { useAction } from '../lib/api'
@@ -62,6 +62,7 @@ export function JoinGroupModal({ open, onClose }: { open: boolean; onClose: () =
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [errorKey, setErrorKey] = useState(0)
+  const joinBtnRef = useRef<HTMLButtonElement>(null)
   const { run, pending } = useAction<{ groupId: string; alreadyMember: boolean }>('joinGroup')
   const navigate = useNavigate()
   const toast = useToast()
@@ -109,7 +110,7 @@ export function JoinGroupModal({ open, onClose }: { open: boolean; onClose: () =
               setCode(v)
               if (error) setError(null)
             }}
-            onComplete={(v) => void join(v)}
+            onComplete={() => requestAnimationFrame(() => joinBtnRef.current?.focus())}
             errorKey={errorKey}
             invalid={!!error}
             disabled={pending}
@@ -118,14 +119,14 @@ export function JoinGroupModal({ open, onClose }: { open: boolean; onClose: () =
             role={error ? 'alert' : undefined}
             className={error ? 'text-center text-sm text-danger-ink' : 'text-center text-xs text-muted-foreground'}
           >
-            {error ?? 'Letters and digits only. Paste works too.'}
+            {error ?? 'Letters and digits only. Paste works too. Press Enter to join.'}
           </p>
         </Modal.Body>
         <Modal.Footer>
           <Button type="button" variant="ghost" onClick={close}>
             Cancel
           </Button>
-          <Button type="submit" loading={pending} disabled={code.length !== 6}>
+          <Button ref={joinBtnRef} type="submit" loading={pending} disabled={code.length !== 6}>
             Join group
           </Button>
         </Modal.Footer>
