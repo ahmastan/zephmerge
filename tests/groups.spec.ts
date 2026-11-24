@@ -47,8 +47,11 @@ test('create → join by code → live notes → outsider locked out', async ({ 
   const bad = await action(b.page, 'joinGroup', { code: 'ZZZZZ2' })
   expect(bad.success).toBe(false)
   await b.page.getByRole('button', { name: 'Join with code' }).click()
-  await b.page.getByLabel('Join code').fill(code.toLowerCase())
-  await b.page.getByRole('button', { name: 'Join group' }).click()
+  // Typing a bad code into the 6 boxes auto-submits and shakes with an error.
+  await b.page.getByLabel('Character 1 of 6').pressSequentially('ZZZZZ2')
+  await expect(b.page.getByRole('alert')).toContainText('No group uses that code', { timeout: 15_000 })
+  await expect(b.page.getByRole('group', { name: 'Join code' })).toHaveClass(/code-shake/)
+  await b.page.getByLabel('Character 1 of 6').pressSequentially(code.toLowerCase())
   await expect(b.page).toHaveURL(new RegExp(`/groups/${groupId}`), { timeout: 20_000 })
   await expect(b.page.getByRole('heading', { name: `${stamp} Calc` })).toBeVisible({ timeout: 20_000 })
 

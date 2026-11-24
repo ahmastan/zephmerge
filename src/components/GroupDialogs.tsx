@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { LIMITS } from '../config'
 import { useAction } from '../lib/api'
 import { bumpMembership } from '../lib/membership'
+import { CodeInput } from './CodeInput'
 import { Button, Input, Label, Modal, useToast } from './ui'
 
 export function CreateGroupModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -60,50 +61,71 @@ export function CreateGroupModal({ open, onClose }: { open: boolean; onClose: ()
 export function JoinGroupModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [errorKey, setErrorKey] = useState(0)
   const { run, pending } = useAction<{ groupId: string; alreadyMember: boolean }>('joinGroup')
   const navigate = useNavigate()
   const toast = useToast()
 
-  async function submit(e: FormEvent) {
-    e.preventDefault()
+  function close() {
+    setCode('')
     setError(null)
-    const r = await run({ code })
-    if (!r.success) return setError(r.error)
+    onClose()
+  }
+
+  async function join(value: string) {
+    if (pending || value.length !== 6) return
+    setError(null)
+    const r = await run({ code: value })
+    if (!r.success) {
+      setError(r.error)
+      setErrorKey((k) => k + 1)
+      setCode('') // shake, then start fresh from the first box
+      return
+    }
     bumpMembership()
     toast.success(r.data.alreadyMember ? 'You’re already in this group' : 'Joined group')
-    setCode('')
-    onClose()
+    close()
     navigate(`/groups/${r.data.groupId}`)
   }
 
   return (
-    <Modal open={open} onClose={onClose} size="sm">
-      <form onSubmit={submit}>
+    <Modal open={open} onClose={close} size="sm">
+      <form
+        onSubmit={(e: FormEvent) => {
+          e.preventDefault()
+          void join(code)
+        }}
+      >
         <Modal.Header>
           <Modal.Title>Join with a code</Modal.Title>
           <Modal.Description>Ask a group member for their 6-character code.</Modal.Description>
         </Modal.Header>
-        <Modal.Body className="space-y-2">
-          <Label htmlFor="join-code">Join code</Label>
-          <Input
+        <Modal.Body className="space-y-3 py-2">
+          <CodeInput
             id="join-code"
             autoFocus
             value={code}
-            maxLength={9}
-            autoComplete="off"
-            spellCheck={false}
-            placeholder="ABC234"
-            className="h-12 text-center font-mono text-xl uppercase tracking-[0.4em]"
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            aria-invalid={!!error || undefined}
+            onChange={(v) => {
+              setCode(v)
+              if (error) setError(null)
+            }}
+            onComplete={(v) => void join(v)}
+            errorKey={errorKey}
+            invalid={!!error}
+            disabled={pending}
           />
-          {error && <p role="alert" className="text-sm text-danger-ink">{error}</p>}
+          <p
+            role={error ? 'alert' : undefined}
+            className={error ? 'text-center text-sm text-danger-ink' : 'text-center text-xs text-muted-foreground'}
+          >
+            {error ?? 'Letters and digits only. Paste works too.'}
+          </p>
         </Modal.Body>
         <Modal.Footer>
-          <Button type="button" variant="ghost" onClick={onClose}>
+          <Button type="button" variant="ghost" onClick={close}>
             Cancel
           </Button>
-          <Button type="submit" loading={pending} disabled={code.replace(/[\s-]/g, '').length !== 6}>
+          <Button type="submit" loading={pending} disabled={code.length !== 6}>
             Join group
           </Button>
         </Modal.Footer>
