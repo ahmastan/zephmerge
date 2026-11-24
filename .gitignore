@@ -28,3 +28,6 @@ AGENTS.md
 *.deepspace.md
 .agents/
 skills-lock.json
+
+# macOS
+.DS_Store
