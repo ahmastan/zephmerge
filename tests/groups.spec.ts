@@ -5,31 +5,17 @@
  * member) can neither read the group's notes nor write into it — proving the
  * permissions are enforced server-side, not just hidden in the UI.
  */
-import type { Page } from '@playwright/test'
 import { test, expect, loadAllTestAccounts } from 'deepspace/testing'
+import { action, cleanupTestGroups } from './helpers/actions'
 
 test.skip(loadAllTestAccounts().length < 3, 'Needs 3 usable test accounts')
 
 /** Calls a server action as the page's signed-in user. */
-async function action<T = unknown>(page: Page, name: string, params: Record<string, unknown>) {
-  return page.evaluate(
-    async ([n, p]) => {
-      const t = await fetch('/api/auth/token', { method: 'POST', credentials: 'include' })
-      const { token } = (await t.json()) as { token: string }
-      const res = await fetch(`/api/actions/${n}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(p),
-      })
-      return res.json()
-    },
-    [name, params] as const,
-  ) as Promise<{ success: true; data: T } | { success: false; error: string }>
-}
 
 test('create → join by code → live notes → outsider locked out', async ({ users }) => {
   test.setTimeout(120_000)
   const [a, b, c] = await users(3)
+  await Promise.all([cleanupTestGroups(a.page), cleanupTestGroups(b.page), cleanupTestGroups(c.page)])
   const stamp = `__test-${Date.now()}__`
 
   // A creates a group through the UI.

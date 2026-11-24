@@ -25,12 +25,18 @@ export function NoteEditorModal({ open, onClose, groupId, lectures, editing }: P
   const fileRef = useRef<HTMLInputElement>(null)
   const toast = useToast()
 
+  // Initialise only when the dialog opens (or switches note). `lectures` is
+  // rebuilt on every parent render, so it must not retrigger this, or a
+  // teammate's live update would wipe what you're typing.
+  const lecturesRef = useRef(lectures)
+  lecturesRef.current = lectures
+  const editingId = editing?.noteId ?? null
   useEffect(() => {
     if (!open) return
-    setLecture(editing?.lectureLabel ?? lectures[0] ?? '')
+    setLecture(editing?.lectureLabel ?? lecturesRef.current[0] ?? '')
     setBody(editing?.body ?? '')
     setError(null)
-  }, [open, editing, lectures])
+  }, [open, editingId])
 
   async function readFile(file: File) {
     if (!/\.(md|markdown|txt)$/i.test(file.name) && !file.type.startsWith('text/')) {

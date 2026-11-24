@@ -115,3 +115,25 @@ export const leaveGroup: ActionHandler<Env> = async ({ userId, params, tools }) 
   if (!r.success) return fail(r.error)
   return ok({ left: true })
 }
+
+/** deleteGroup({ groupId }) — owner only; removes the group and everything in it. */
+export const deleteGroup: ActionHandler<Env> = async ({ userId, params, tools }) => {
+  const m = await assertMember(tools, userId, params.groupId)
+  if (!m.ok) return fail(m.error)
+  const groupId = params.groupId as string
+  const group = await getRecord<GroupRow>(tools, 'groups', groupId)
+  if (!group) return fail('Group not found')
+  if (group.data.ownerId !== userId) return fail('Only the group owner can delete it')
+
+  const drain = async (collection: string, where: Record<string, unknown>) => {
+    for (;;) {
+      const r = await tools.deleteWhere(collection, where, 500)
+      if (!r.success || (r.data as { deleted: number }).deleted < 500) break
+    }
+  }
+  for (const c of ['card_progress', 'cards', 'suggestions', 'notes']) await drain(c, { groupId })
+  await drain('team_members', { teamId: groupId })
+  const r = await tools.remove('groups', groupId)
+  if (!r.success) return fail(r.error)
+  return ok({ deleted: true })
+}

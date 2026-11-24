@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Quote, X } from 'lucide-react'
+import { ArrowRight, Check, X } from 'lucide-react'
 import type { Suggestion } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { MemberAvatar } from '../MemberAvatar'
@@ -68,9 +68,8 @@ export function SuggestionCard({ s, pending, onDecide, onHover, onFocusText }: P
             <li key={i} className="flex gap-2">
               <MemberAvatar userId={src.authorId + src.authorName} name={src.authorName} size="xs" tooltip={false} />
               <blockquote className="min-w-0 flex-1 text-xs leading-relaxed text-muted-foreground">
-                <span className="font-medium text-foreground">{src.authorName}</span>
-                <Quote className="mx-1 inline h-3 w-3 -translate-y-px" aria-hidden />
-                <span className="break-words font-mono text-[11.5px]">{src.quote}</span>
+                <span className="mr-1.5 font-medium text-foreground">{src.authorName}</span>
+                <span className="break-words font-mono text-[11.5px] before:content-['“'] after:content-['”']">{src.quote}</span>
               </blockquote>
             </li>
           ))}

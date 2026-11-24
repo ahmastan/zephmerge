@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuthProfileReady, usePresenceRoom, useQuery } from 'deepspace'
-import { Check, Copy, GitMerge, LogOut, MoreHorizontal, NotebookPen, SearchX } from 'lucide-react'
+import { Check, Copy, GitMerge, Layers, LogOut, MoreHorizontal, NotebookPen, SearchX, Trash2 } from 'lucide-react'
 import { MemberAvatar } from '@/components/MemberAvatar'
 import { NotesTab } from '@/components/notes/NotesTab'
 import { MergedTab } from '@/components/merged/MergedTab'
+import { CardsTab } from '@/components/cards/CardsTab'
 import {
   Button,
   ConfirmModal,
@@ -30,6 +31,7 @@ import { cn } from '@/lib/utils'
 const TABS = [
   { id: 'notes', label: 'Notes', icon: NotebookPen },
   { id: 'merged', label: 'Merged', icon: GitMerge },
+  { id: 'cards', label: 'Cards', icon: Layers },
 ] as const
 type TabId = (typeof TABS)[number]['id']
 
@@ -86,6 +88,9 @@ export default function GroupPage() {
             myName={user?.name ?? 'you'}
             onGoToNotes={() => setParams({ tab: 'notes' }, { replace: true })}
           />
+        </TabsContent>
+        <TabsContent value="cards" className="py-6">
+          <CardsTab groupId={groupId} myId={user?.id ?? ''} />
         </TabsContent>
       </Tabs>
     </div>
@@ -177,16 +182,15 @@ function GroupMenu({ group, isOwner }: { group: Group; isOwner: boolean }) {
   const [pending, setPending] = useState(false)
   const navigate = useNavigate()
   const toast = useToast()
-  if (isOwner) return null
 
-  async function leave() {
+  async function run() {
     setPending(true)
-    const r = await callAction('leaveGroup', { groupId: group.groupId })
+    const r = await callAction(isOwner ? 'deleteGroup' : 'leaveGroup', { groupId: group.groupId })
     setPending(false)
-    if (!r.success) return toast.error('Couldn’t leave group', r.error)
+    if (!r.success) return toast.error(isOwner ? 'Couldn’t delete group' : 'Couldn’t leave group', r.error)
     setConfirm(false)
     bumpMembership()
-    toast.success(`Left ${group.name}`)
+    toast.success(isOwner ? `Deleted ${group.name}` : `Left ${group.name}`)
     navigate('/home')
   }
 
@@ -202,19 +206,24 @@ function GroupMenu({ group, isOwner }: { group: Group; isOwner: boolean }) {
         />
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => setConfirm(true)}>
-            <LogOut aria-hidden /> Leave group
+            {isOwner ? <Trash2 aria-hidden /> : <LogOut aria-hidden />}
+            {isOwner ? 'Delete group' : 'Leave group'}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <ConfirmModal
         open={confirm}
         onClose={() => setConfirm(false)}
-        onConfirm={leave}
+        onConfirm={run}
         loading={pending}
         variant="destructive"
-        title={`Leave ${group.name}?`}
-        description="You’ll lose access to its notes. You can rejoin later with the code."
-        confirmText="Leave group"
+        title={isOwner ? `Delete ${group.name}?` : `Leave ${group.name}?`}
+        description={
+          isOwner
+            ? 'This permanently deletes the group for everyone: notes, merged notes, suggestions and flashcards.'
+            : 'You’ll lose access to its notes. You can rejoin later with the code.'
+        }
+        confirmText={isOwner ? 'Delete group' : 'Leave group'}
       />
     </>
   )
