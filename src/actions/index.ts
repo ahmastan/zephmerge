@@ -4,6 +4,7 @@ import { generateCards } from './cards'
 import { createGroup, deleteGroup, joinGroup, leaveGroup } from './groups'
 import { decideSuggestion, mergeNotes, seedDemoNotes } from './merge'
 import { addNote, deleteNote, updateNote } from './notes'
+import { advanceQuiz, endQuiz, serverTime, startQuiz, submitAnswer } from './quiz'
 
 export const actions: Record<string, ActionHandler<Env>> = {
   createGroup,
@@ -17,4 +18,9 @@ export const actions: Record<string, ActionHandler<Env>> = {
   mergeNotes,
   decideSuggestion,
   generateCards,
+  serverTime,
+  startQuiz,
+  advanceQuiz,
+  submitAnswer,
+  endQuiz,
 }

@@ -131,7 +131,7 @@ export const deleteGroup: ActionHandler<Env> = async ({ userId, params, tools })
       if (!r.success || (r.data as { deleted: number }).deleted < 500) break
     }
   }
-  for (const c of ['card_progress', 'cards', 'suggestions', 'notes']) await drain(c, { groupId })
+  for (const c of ['quiz_answers', 'quiz_keys', 'quiz_sessions', 'card_progress', 'cards', 'suggestions', 'notes']) await drain(c, { groupId })
   await drain('team_members', { teamId: groupId })
   const r = await tools.remove('groups', groupId)
   if (!r.success) return fail(r.error)
