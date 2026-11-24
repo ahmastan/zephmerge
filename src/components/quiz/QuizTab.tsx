@@ -9,7 +9,7 @@ import { Button, ConfirmModal, useToast } from '../ui'
 import { Countdown, remainingMs } from './Countdown'
 import { Leaderboard, standings } from './Leaderboard'
 import { hasResults, LETTERS, normalizeSession, ordinal, plural } from './quizUtils'
-import type { QuizSession } from './types'
+import type { QuizSession } from '@/lib/types'
 import './quiz.css'
 
 interface Props {
@@ -328,8 +328,8 @@ function LiveSession({
   }, [peers, myId, myName, answered, idx])
 
   /**
-   * advanceQuiz is not idempotent (two calls during a question skip the
-   * reveal), so every caller goes through here and each status:index fires once.
+   * Every caller goes through here and each status:index fires once. The
+   * server is idempotent too: `from` makes a stale advance a no-op.
    */
   const advance = useCallback(
     async (manual: boolean) => {
@@ -337,7 +337,10 @@ function LiveSession({
       if (advanceKey.current === key) return
       advanceKey.current = key
       setAdvancing(true)
-      const r = await callAction<{ status: string; currentIndex: number; serverNow: number }>('advanceQuiz', { sessionId })
+      const r = await callAction<{ status: string; currentIndex: number; serverNow: number }>('advanceQuiz', {
+        sessionId,
+        from: { status: key.split(':')[0], index: Number(key.split(':')[1]) },
+      })
       setAdvancing(false)
       if (r.success) {
         clock.note(r.data.serverNow)

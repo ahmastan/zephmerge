@@ -13,7 +13,9 @@ const norm = (s: string) => s.replace(/[−–—]/g, '-').replace(/[‘’]/g, 
 
 test('merge → review suggestions → live text → flashcards', async ({ users }) => {
   test.setTimeout(300_000)
-  const [a, b, c] = await users(3)
+  // Bob drives the AI steps here; quiz.spec also uses Bob for two calls. Each
+  // account has a 25/day AI cap, so heavy local re-runs can exhaust it.
+  const [b, a, c] = await users(3)
   await Promise.all([cleanupTestGroups(a.page), cleanupTestGroups(b.page), cleanupTestGroups(c.page)])
   const stamp = `__test-${Date.now()}__`
 

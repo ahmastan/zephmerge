@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { MemberAvatar } from '../MemberAvatar'
-import type { QuizScore } from './types'
+import type { QuizScore } from '@/lib/types'
 import { prefersReducedMotion } from './quizUtils'
 
 export interface Standing {

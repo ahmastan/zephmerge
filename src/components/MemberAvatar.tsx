@@ -18,7 +18,7 @@ export function memberColor(userId: string): string {
 }
 
 export function initials(name: string | undefined): string {
-  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean)
+  const parts = (name ?? '').trim().split(/\s+/).filter((w) => /^[\p{L}\p{N}]/u.test(w))
   if (parts.length === 0) return '?'
   return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase()
 }

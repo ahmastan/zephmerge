@@ -1,4 +1,4 @@
-import type { QuizSession } from './types'
+import type { QuizSession } from '@/lib/types'
 
 export function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches

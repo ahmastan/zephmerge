@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuthProfileReady, usePresenceRoom, useQuery } from 'deepspace'
-import { Check, Copy, GitMerge, Layers, LogOut, MoreHorizontal, NotebookPen, SearchX, Trash2 } from 'lucide-react'
+import { Check, Copy, GitMerge, Layers, Trophy, LogOut, MoreHorizontal, NotebookPen, SearchX, Trash2 } from 'lucide-react'
 import { MemberAvatar } from '@/components/MemberAvatar'
 import { NotesTab } from '@/components/notes/NotesTab'
 import { MergedTab } from '@/components/merged/MergedTab'
 import { CardsTab } from '@/components/cards/CardsTab'
+import { QuizTab } from '@/components/quiz/QuizTab'
 import {
   Button,
   ConfirmModal,
@@ -25,13 +26,14 @@ import {
 } from '@/components/ui'
 import { callAction } from '@/lib/api'
 import { bumpMembership } from '@/lib/membership'
-import type { Group, Member } from '@/lib/types'
+import type { Card, Group, Member } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 const TABS = [
   { id: 'notes', label: 'Notes', icon: NotebookPen },
   { id: 'merged', label: 'Merged', icon: GitMerge },
   { id: 'cards', label: 'Cards', icon: Layers },
+  { id: 'quiz', label: 'Quiz', icon: Trophy },
 ] as const
 type TabId = (typeof TABS)[number]['id']
 
@@ -40,6 +42,7 @@ export default function GroupPage() {
   const { user } = useAuthProfileReady({ requireUser: true })
   const group = useQuery<Group>('groups', { where: { groupId } })
   const members = useQuery<Member>('team_members', { where: { teamId: groupId, status: 'active' } })
+  const cards = useQuery<Card>('cards', { where: { groupId } })
   const [params, setParams] = useSearchParams()
   const tab = (TABS.find((t) => t.id === params.get('tab'))?.id ?? 'notes') as TabId
 
@@ -91,6 +94,16 @@ export default function GroupPage() {
         </TabsContent>
         <TabsContent value="cards" className="py-6">
           <CardsTab groupId={groupId} myId={user?.id ?? ''} />
+        </TabsContent>
+        {/* Kept mounted: the host's timer-driven reveal and quiz presence live inside. */}
+        <TabsContent value="quiz" keepMounted className="py-6 data-[hidden]:hidden">
+          <QuizTab
+            groupId={groupId}
+            myId={user?.id ?? ''}
+            myName={user?.name ?? 'You'}
+            cardCount={cards.records.length}
+            onGoToCards={() => setParams({ tab: 'cards' }, { replace: true })}
+          />
         </TabsContent>
       </Tabs>
     </div>

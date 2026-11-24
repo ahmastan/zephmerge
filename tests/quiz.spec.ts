@@ -20,8 +20,12 @@ test('quiz rules hold against cheating', async ({ users }) => {
   const { groupId, joinCode } = g.data
   expect(await action(b.page, 'joinGroup', { code: joinCode })).toMatchObject({ success: true })
   expect(await action(a.page, 'seedDemoNotes', { groupId })).toMatchObject({ success: true })
-  expect(await action(a.page, 'mergeNotes', { groupId })).toMatchObject({ success: true })
-  const cards = await action<{ count: number }>(a.page, 'generateCards', { groupId })
+  // B runs the AI steps (spreads usage across accounts' daily caps).
+  const merged = await action(b.page, 'mergeNotes', { groupId })
+  if (!merged.success) console.log(`[quiz.spec] merge failed: ${merged.error}`)
+  expect(merged).toMatchObject({ success: true })
+  const cards = await action<{ count: number }>(b.page, 'generateCards', { groupId })
+  if (!cards.success) console.log(`[quiz.spec] generateCards failed: ${cards.error}`)
   expect(cards).toMatchObject({ success: true })
 
   // Only members can start; B (not host) cannot advance.
@@ -81,4 +85,30 @@ test('quiz rules hold against cheating', async ({ users }) => {
   expect(await action(a.page, 'advanceQuiz', { sessionId, from: { status: 'reveal', index: 1 } })).toMatchObject({ success: true })
   expect(await action(a.page, 'endQuiz', { sessionId })).toMatchObject({ success: true })
   expect(await action(b.page, 'endQuiz', { sessionId })).toMatchObject({ success: false })
+
+  // ── UI flow: A hosts, B plays, both see the same reveal and leaderboard ──
+  await Promise.all([a.page.goto(`/groups/${groupId}?tab=quiz`), b.page.goto(`/groups/${groupId}?tab=quiz`)])
+  // The finished quiz above shows its results first; the host starts a new one.
+  await a.page.getByRole('button', { name: 'New quiz' }).click({ timeout: 20_000 })
+  await a.page.getByTestId('quiz-start').click()
+  await expect(a.page.getByTestId('quiz-advance')).toBeVisible({ timeout: 20_000 }) // lobby Start
+  await expect(b.page.getByText(/Waiting for/).first()).toBeVisible({ timeout: 20_000 })
+  await a.page.getByTestId('quiz-advance').click()
+  await expect(b.page.getByTestId('quiz-countdown')).toBeVisible({ timeout: 20_000 })
+  await expect(a.page.getByTestId('quiz-countdown')).toBeVisible()
+
+  await b.page.getByTestId('quiz-choice-0').click()
+  await a.page.getByTestId('quiz-choice-1').click()
+  await expect(a.page.getByTestId('quiz-answered-count')).toContainText('2', { timeout: 15_000 })
+
+  await a.page.getByTestId('quiz-advance').click() // Reveal now
+  for (const p of [a.page, b.page]) {
+    await expect(p.getByTestId('quiz-my-result')).toBeVisible({ timeout: 20_000 })
+    await expect(p.getByTestId('quiz-leaderboard')).toBeVisible()
+  }
+  const aBoard = (await a.page.getByTestId('quiz-leaderboard').innerText()).replace(/\s+/g, ' ')
+  const bBoard = (await b.page.getByTestId('quiz-leaderboard').innerText()).replace(/\s+/g, ' ')
+  console.log(`[quiz.spec] leaderboard: ${aBoard}`)
+  // Same server-computed standings in both browsers (each marks its own row "(you)").
+  expect(bBoard.replace(' (you)', '')).toBe(aBoard.replace(' (you)', ''))
 })
