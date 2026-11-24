@@ -1,0 +1,59 @@
+/* Live quiz motion. Transitions for anything that can retarget (presence,
+ * ranks, tile states); keyframes only for one-off mounts. */
+
+/* Countdown: driven per frame from JS via transform (scaleX). Constant motion,
+ * so no easing here; the colour swap under 5s is a short fade. */
+.quiz-bar {
+  transform-origin: left center;
+  will-change: transform;
+  transition: background-color 200ms ease;
+}
+
+/* Answer tiles: state changes (locked in, revealed) fade; press gives feedback. */
+.quiz-tile {
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease,
+    transform 120ms var(--ease-out);
+}
+.quiz-tile:enabled:active {
+  transform: scale(0.98);
+}
+
+/* Answered check on a player avatar: retargets if presence flickers. */
+.quiz-check {
+  transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+.quiz-check[data-on='false'] {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+/* Leaderboard rows sit at translateY(rank * row height); a rank change is a
+ * transform transition, never a layout change. */
+.quiz-row {
+  transition:
+    transform 260ms var(--ease-in-out),
+    opacity 200ms var(--ease-out);
+}
+
+/* One-off entrances (inner content, so they never fight the row transform). */
+@keyframes quiz-pop {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes quiz-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.quiz-pop { animation: quiz-pop 200ms var(--ease-out) both; }
+.quiz-fade { animation: quiz-fade 200ms var(--ease-out) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .quiz-tile:enabled:active { transform: none; }
+  .quiz-check[data-on='false'] { transform: none; }
+  .quiz-row { transition: opacity 200ms linear; }
+  .quiz-pop { animation-name: quiz-fade; }
+}
