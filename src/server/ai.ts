@@ -32,18 +32,31 @@ export async function complete(
   model: string,
   system: string,
   prompt: string,
-  maxOutputTokens = 16_000,
+  maxOutputTokens = 6_000,
 ): Promise<string> {
   const ai = createDeepSpaceAI(env, 'anthropic') // no authToken → owner pays
-  const { text } = await generateText({
-    model: ai(model),
-    system,
-    prompt,
-    maxOutputTokens,
-    temperature: 0.2,
-  })
-  return text
+  try {
+    const { text } = await generateText({
+      model: ai(model),
+      system,
+      prompt,
+      // Credits are reserved up front from this allowance, so keep it close
+      // to what the task needs (a merged sheet is a few thousand tokens).
+      maxOutputTokens,
+      temperature: 0.2,
+    })
+    return text
+  } catch (e) {
+    const msg = String((e as Error)?.message ?? e)
+    console.error(`[ai] ${model} failed: ${msg.slice(0, 300)}`)
+    if (/payment required|402|insufficient|credit/i.test(msg)) {
+      throw new AiUnavailableError('AI is unavailable right now (the app’s AI credits have run out). Please try again later.')
+    }
+    throw new AiUnavailableError('The AI service didn’t respond. Please try again in a moment.')
+  }
 }
+
+export class AiUnavailableError extends Error {}
 
 /**
  * Runs the model, parses, and retries once with the parse error appended.

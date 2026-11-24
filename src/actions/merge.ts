@@ -73,7 +73,7 @@ export const mergeNotes: ActionHandler<Env> = async ({ userId, params, tools, en
     output = await completeJson(env, MODELS.merge, MERGE_SYSTEM, mergePrompt(input), (t) => {
       const r = parseMergeOutput(t)
       return r.ok ? { ok: true, value: r.value } : r
-    }, 32_000)
+    }, 10_000)
   } catch (e) {
     // Release the cooldown so the group can retry right away.
     await tools.update('groups', groupId, { lastMergedAt: group.data.lastMergedAt ?? '' })

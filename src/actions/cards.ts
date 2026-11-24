@@ -25,7 +25,7 @@ export const generateCards: ActionHandler<Env> = async ({ userId, params, tools,
     generated = await completeJson(env, MODELS.cards, CARDS_SYSTEM, cardsPrompt(merged.slice(0, 60_000)), (t) => {
       const r = parseCardsOutput(t)
       return r.ok ? { ok: true, value: r.cards } : r
-    })
+    }, 6_000)
   } catch (e) {
     return fail((e as Error).message || 'Card generation failed')
   }
