@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from 'deepspace'
-import { ChevronDown, FilePlus2, Pencil, Trash2 } from 'lucide-react'
+import { ChevronDown, FilePlus2, FlaskConical, Pencil, Trash2 } from 'lucide-react'
 import { callAction } from '@/lib/api'
 import type { Note } from '@/lib/types'
 import { timeAgo } from '@/lib/time'
@@ -31,6 +31,17 @@ export function NotesTab({ groupId, myId }: { groupId: string; myId: string }) {
   }, [records])
   const lectures = byLecture.map(([l]) => l)
 
+  const toast = useToast()
+  const [seeding, setSeeding] = useState(false)
+  const hasSamples = records.some((r) => r.data.sampleAuthor)
+  async function seedDemo() {
+    setSeeding(true)
+    const r = await callAction<{ added: number }>('seedDemoNotes', { groupId })
+    setSeeding(false)
+    if (!r.success) return toast.error('Couldn’t add sample notes', r.error)
+    toast.success('Sample notes added', 'Three classmates’ notes with a few planted mistakes. Head to Merged to merge them.')
+  }
+
   function openNew() {
     setEditing(null)
     setEditorOpen(true)
@@ -53,6 +64,7 @@ export function NotesTab({ groupId, myId }: { groupId: string; myId: string }) {
           title="No notes yet"
           description="Everyone adds their own notes for a lecture. Once there are two or more, merge them into one study sheet."
           action={{ label: 'Add your notes', onClick: openNew }}
+          secondaryAction={{ label: seeding ? 'Adding sample notes…' : 'Try with demo notes', onClick: seedDemo }}
         />
       ) : (
         <div className="space-y-10">
@@ -61,9 +73,16 @@ export function NotesTab({ groupId, myId }: { groupId: string; myId: string }) {
               {records.length} {records.length === 1 ? 'note' : 'notes'} across {lectures.length}{' '}
               {lectures.length === 1 ? 'lecture' : 'lectures'}
             </p>
-            <Button onClick={openNew}>
-              <FilePlus2 aria-hidden /> Add notes
-            </Button>
+            <div className="flex gap-2">
+              {!hasSamples && (
+                <Button variant="ghost" onClick={seedDemo} loading={seeding}>
+                  <FlaskConical aria-hidden /> Demo notes
+                </Button>
+              )}
+              <Button onClick={openNew}>
+                <FilePlus2 aria-hidden /> Add notes
+              </Button>
+            </div>
           </div>
           {byLecture.map(([lecture, notes]) => (
             <section key={lecture} aria-labelledby={`lec-${lecture}`}>

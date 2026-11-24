@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuthProfileReady, usePresenceRoom, useQuery } from 'deepspace'
-import { Check, Copy, LogOut, MoreHorizontal, NotebookPen, SearchX } from 'lucide-react'
+import { Check, Copy, GitMerge, LogOut, MoreHorizontal, NotebookPen, SearchX } from 'lucide-react'
 import { MemberAvatar } from '@/components/MemberAvatar'
 import { NotesTab } from '@/components/notes/NotesTab'
+import { MergedTab } from '@/components/merged/MergedTab'
 import {
   Button,
   ConfirmModal,
@@ -26,7 +27,10 @@ import { bumpMembership } from '@/lib/membership'
 import type { Group, Member } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
-const TABS = [{ id: 'notes', label: 'Notes', icon: NotebookPen }] as const
+const TABS = [
+  { id: 'notes', label: 'Notes', icon: NotebookPen },
+  { id: 'merged', label: 'Merged', icon: GitMerge },
+] as const
 type TabId = (typeof TABS)[number]['id']
 
 export default function GroupPage() {
@@ -74,6 +78,14 @@ export default function GroupPage() {
         </TabsList>
         <TabsContent value="notes" className="py-6">
           <NotesTab groupId={groupId} myId={user?.id ?? ''} />
+        </TabsContent>
+        <TabsContent value="merged" className="py-6">
+          <MergedTab
+            groupId={groupId}
+            group={g.data}
+            myName={user?.name ?? 'you'}
+            onGoToNotes={() => setParams({ tab: 'notes' }, { replace: true })}
+          />
         </TabsContent>
       </Tabs>
     </div>
