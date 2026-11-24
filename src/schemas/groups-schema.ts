@@ -14,6 +14,11 @@ import type { CollectionSchema } from 'deepspace/schema'
 
 const closed = { read: false, create: false, update: false, delete: false } as const
 const adminAll = { read: true, create: true, update: true, delete: true } as const
+/**
+ * The app owner is pinned to `admin`. Admins still only *read* groups they
+ * belong to, so "outsiders see nothing" holds for every account.
+ */
+const adminTeam = { read: 'team', create: true, update: true, delete: true } as const
 
 /**
  * One row per group. The record id IS the groupId (actions pass it as the
@@ -38,7 +43,7 @@ export const groupsSchema: CollectionSchema = {
     '*': closed,
     viewer: closed,
     member: { read: 'team', create: false, update: 'team', delete: false, writableFields: [] },
-    admin: adminAll,
+    admin: adminTeam,
   },
 }
 
@@ -66,7 +71,7 @@ export const teamMembersSchema: CollectionSchema = {
     '*': closed,
     viewer: closed,
     member: { read: 'team', create: false, update: false, delete: false },
-    admin: adminAll,
+    admin: adminTeam,
   },
 }
 
@@ -86,7 +91,7 @@ export const notesSchema: CollectionSchema = {
     '*': closed,
     viewer: closed,
     member: { read: 'team', create: false, update: false, delete: false },
-    admin: adminAll,
+    admin: adminTeam,
   },
 }
 
@@ -123,5 +128,91 @@ export const joinAttemptsSchema: CollectionSchema = {
     viewer: closed,
     member: closed,
     admin: adminAll,
+  },
+}
+
+/** AI-proposed corrections from a merge. Members decide via actions only. */
+export const suggestionsSchema: CollectionSchema = {
+  name: 'suggestions',
+  columns: [
+    { name: 'groupId', storage: 'text', interpretation: 'plain', required: true, immutable: true },
+    { name: 'mergeId', storage: 'text', interpretation: 'plain', required: true },
+    { name: 'kind', storage: 'text', interpretation: { kind: 'select', options: ['conflict', 'error', 'gap'] } },
+    { name: 'originalText', storage: 'text', interpretation: 'plain' },
+    { name: 'suggestedText', storage: 'text', interpretation: 'plain' },
+    { name: 'explanation', storage: 'text', interpretation: 'plain' },
+    // [{ noteId, authorId, authorName, quote }]
+    { name: 'sources', storage: 'text', interpretation: { kind: 'json' } },
+    {
+      name: 'status',
+      storage: 'text',
+      interpretation: { kind: 'select', options: ['open', 'accepted', 'rejected', 'stale'] },
+      default: 'open',
+    },
+    { name: 'decidedBy', storage: 'text', interpretation: 'plain' },
+    { name: 'decidedByName', storage: 'text', interpretation: 'plain' },
+    { name: 'order', storage: 'number', interpretation: 'plain' },
+  ],
+  teamField: 'groupId',
+  permissions: {
+    '*': closed,
+    viewer: closed,
+    member: { read: 'team', create: false, update: false, delete: false },
+    admin: adminTeam,
+  },
+}
+
+/** Flashcards generated from the merged notes. Written only by actions. */
+export const cardsSchema: CollectionSchema = {
+  name: 'cards',
+  columns: [
+    { name: 'groupId', storage: 'text', interpretation: 'plain', required: true, immutable: true },
+    { name: 'front', storage: 'text', interpretation: 'plain', required: true },
+    { name: 'back', storage: 'text', interpretation: 'plain', required: true },
+    // 3 wrong answers, used by the quiz
+    { name: 'distractors', storage: 'text', interpretation: { kind: 'json' } },
+    { name: 'topic', storage: 'text', interpretation: 'plain' },
+    { name: 'sourceQuote', storage: 'text', interpretation: 'plain' },
+    { name: 'batchId', storage: 'text', interpretation: 'plain' },
+    { name: 'order', storage: 'number', interpretation: 'plain' },
+  ],
+  teamField: 'groupId',
+  permissions: {
+    '*': closed,
+    viewer: closed,
+    member: { read: 'team', create: false, update: false, delete: false },
+    admin: adminTeam,
+  },
+}
+
+/**
+ * Per-user Leitner progress. Written by the client directly: it is the
+ * caller's own data (userBound + ownerField), one row per (user, card).
+ */
+export const cardProgressSchema: CollectionSchema = {
+  name: 'card_progress',
+  columns: [
+    { name: 'cardId', storage: 'text', interpretation: 'plain', required: true, immutable: true },
+    { name: 'groupId', storage: 'text', interpretation: 'plain', required: true, immutable: true },
+    { name: 'userId', storage: 'text', interpretation: 'plain', userBound: true, immutable: true },
+    { name: 'box', storage: 'number', interpretation: 'plain', default: 1 },
+    { name: 'dueAt', storage: 'text', interpretation: 'plain' },
+    { name: 'correct', storage: 'number', interpretation: 'plain', default: 0 },
+    { name: 'wrong', storage: 'number', interpretation: 'plain', default: 0 },
+    { name: 'lastReviewedAt', storage: 'text', interpretation: 'plain' },
+  ],
+  ownerField: 'userId',
+  uniqueOn: ['userId', 'cardId'],
+  permissions: {
+    '*': closed,
+    viewer: closed,
+    member: {
+      read: 'own',
+      create: true,
+      update: 'own',
+      delete: 'own',
+      writableFields: ['cardId', 'groupId', 'box', 'dueAt', 'correct', 'wrong', 'lastReviewedAt'],
+    },
+    admin: { read: 'own', create: true, update: 'own', delete: 'own' },
   },
 }

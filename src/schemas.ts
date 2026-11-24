@@ -10,6 +10,9 @@ import { usersSchema } from './schemas/users-schema'
 import { settingsSchema } from './schemas/admin-schema'
 import {
   aiUsageSchema,
+  cardProgressSchema,
+  cardsSchema,
+  suggestionsSchema,
   groupsSchema,
   joinAttemptsSchema,
   notesSchema,
@@ -24,4 +27,7 @@ export const schemas: CollectionSchema[] = [
   notesSchema,
   aiUsageSchema,
   joinAttemptsSchema,
+  suggestionsSchema,
+  cardsSchema,
+  cardProgressSchema,
 ]
