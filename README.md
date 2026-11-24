@@ -2,7 +2,9 @@
 
 A shared study notebook for a class group. Everyone adds their own lecture notes. The AI merges them into one study sheet and **proposes** corrections, each quoting the notes it came from, for the group to accept or reject. The group then studies together with flashcards and a live quiz.
 
-**Live:** https://zephmerge.app.space · **Demo video:** _add link_
+**Live:** https://zephmerge.app.space · **Full demo video (1:51):** [demo/media/zephmerge-demo.mp4](demo/media/zephmerge-demo.mp4)
+
+[![Zephmerge demo: AI merge with quoted suggestions, accepting fixes, live co-editing, and a live quiz](demo/media/preview.gif)](demo/media/zephmerge-demo.mp4)
 
 ---
 
