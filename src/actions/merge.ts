@@ -68,6 +68,7 @@ export const mergeNotes: ActionHandler<Env> = async ({ userId, params, tools, en
   }))
 
   let output: MergeOutput
+  const t0 = Date.now()
   try {
     output = await completeJson(env, MODELS.merge, MERGE_SYSTEM, mergePrompt(input), (t) => {
       const r = parseMergeOutput(t)
@@ -80,7 +81,7 @@ export const mergeNotes: ActionHandler<Env> = async ({ userId, params, tools, en
   }
 
   const { suggestions, stats } = validateSuggestions(output, input)
-  console.info(`[merge] group=${groupId} ${JSON.stringify(stats)}`)
+  console.info(`[merge] group=${groupId} ms=${Date.now() - t0} ${JSON.stringify(stats)}`)
 
   // Previous open suggestions no longer refer to this text.
   const open = await queryAll<SuggestionRow>(tools, 'suggestions', { groupId, status: 'open' })

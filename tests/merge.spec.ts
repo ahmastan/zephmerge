@@ -72,7 +72,10 @@ test('merge → review suggestions → live text → flashcards', async ({ users
   await b.page.getByRole('tab', { name: 'Edit' }).click()
   const editor = b.page.getByTestId('merged-editor')
   await expect.poll(() => editor.isDisabled(), { timeout: 30_000, intervals: [500] }).toBe(false)
-  await editor.press('ControlOrMeta+End')
+  await editor.evaluate((el: HTMLTextAreaElement) => {
+    el.focus()
+    el.setSelectionRange(el.value.length, el.value.length)
+  })
   const marker = `live edit ${Date.now()} from B`
   await editor.pressSequentially(`\n\n${marker}`)
   await expect(a.page.getByTestId('merged-doc')).toContainText(marker, { timeout: 20_000 })
