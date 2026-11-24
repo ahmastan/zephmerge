@@ -75,4 +75,25 @@ test('create → join by code → live notes → outsider locked out', async ({ 
 
   const leave = await action(a.page, 'leaveGroup', { groupId })
   expect(leave).toMatchObject({ success: false }) // owner cannot leave
+
+  // B leaves through the UI: the group drops out of B's sidebar live, and the
+  // group page stops showing content.
+  const sidebarLink = b.page.locator(`a[href="/groups/${groupId}"]`)
+  await expect(sidebarLink.first()).toBeVisible()
+  await b.page.getByRole('button', { name: 'Group options' }).click()
+  await b.page.getByRole('menuitem', { name: 'Leave group' }).click()
+  await b.page.getByRole('button', { name: 'Leave group' }).click()
+  await expect(b.page).toHaveURL(/\/home$/, { timeout: 20_000 })
+  await expect(sidebarLink).toHaveCount(0, { timeout: 20_000 })
+  await b.page.goto(`/groups/${groupId}`)
+  await expect(b.page.getByRole('heading', { name: 'Group not found' })).toBeVisible({ timeout: 20_000 })
+  const afterLeave = await action(b.page, 'addNote', { groupId, lectureLabel: 'x', body: 'nope' })
+  expect(afterLeave).toMatchObject({ success: false })
+
+  // B rejoins with the same code (membership is reactivated, not duplicated).
+  // (Back-to-back runs can trip the 5-per-minute join limit; that refusal is
+  // itself the rate limiter working, so accept it explicitly.)
+  const rejoin = await action<{ alreadyMember: boolean }>(b.page, 'joinGroup', { code })
+  if (!rejoin.success) expect(rejoin.error).toMatch(/Too many join attempts/)
+  else expect(rejoin.data.alreadyMember).toBe(false)
 })

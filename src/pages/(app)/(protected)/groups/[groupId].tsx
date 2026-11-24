@@ -22,6 +22,7 @@ import {
   useToast,
 } from '@/components/ui'
 import { callAction } from '@/lib/api'
+import { bumpMembership } from '@/lib/membership'
 import type { Group, Member } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -36,9 +37,12 @@ export default function GroupPage() {
   const [params, setParams] = useSearchParams()
   const tab = (TABS.find((t) => t.id === params.get('tab'))?.id ?? 'notes') as TabId
 
-  if (group.status === 'loading') return <GroupSkeleton />
+  const myId = user?.id ?? ''
+  const isMember = members.records.some((m) => m.data.userId === myId)
+  if (group.status === 'loading' || members.status === 'loading' || !myId) return <GroupSkeleton />
   const g = group.records[0]
-  if (group.status === 'error' || !g) {
+  // Admins can read every group; only members get the group view.
+  if (group.status === 'error' || !g || !isMember) {
     return (
       <EmptyState
         className="min-h-full"
@@ -169,6 +173,7 @@ function GroupMenu({ group, isOwner }: { group: Group; isOwner: boolean }) {
     setPending(false)
     if (!r.success) return toast.error('Couldn’t leave group', r.error)
     setConfirm(false)
+    bumpMembership()
     toast.success(`Left ${group.name}`)
     navigate('/home')
   }

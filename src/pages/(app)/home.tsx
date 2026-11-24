@@ -7,13 +7,20 @@ import { CreateGroupModal, JoinGroupModal } from '../../components/GroupDialogs'
 import { LogoMark } from '../../components/Logo'
 import { MemberAvatar } from '../../components/MemberAvatar'
 import { Button } from '../../components/ui'
-import type { Group, Member, Note } from '../../lib/types'
+import type { Member, Note } from '../../lib/types'
+import { useMyGroups } from '../../lib/useMyGroups'
+import { useMembershipVersion } from '../../lib/membership'
 import { timeAgo } from '../../lib/time'
 
 export default function HomePage() {
   const { isLoaded, isSignedIn } = useAuthProfileReady({ requireUser: true })
   if (!isLoaded) return <div aria-busy="true" className="h-full" />
-  return isSignedIn ? <GroupsDashboard /> : <SignedOutHome />
+  return isSignedIn ? <KeyedDashboard /> : <SignedOutHome />
+}
+
+function KeyedDashboard() {
+  const v = useMembershipVersion()
+  return <GroupsDashboard key={v} />
 }
 
 function SignedOutHome() {
@@ -39,7 +46,7 @@ function SignedOutHome() {
 }
 
 function GroupsDashboard() {
-  const groups = useQuery<Group>('groups', { orderBy: 'createdAt', orderDir: 'desc' })
+  const groups = useMyGroups('desc')
   const members = useQuery<Member>('team_members', { where: { status: 'active' } })
   const notes = useQuery<Note>('notes')
   const [createOpen, setCreateOpen] = useState(false)

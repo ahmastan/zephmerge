@@ -8,10 +8,11 @@
 
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { AuthOverlay, signOut, useAuthProfileReady, useQuery } from 'deepspace'
+import { AuthOverlay, signOut, useAuthProfileReady } from 'deepspace'
 import { ChevronsUpDown, Hash, LogIn, LogOut, Menu, Plus, Settings, X } from 'lucide-react'
 import { cn } from '../lib/utils'
-import type { Group } from '../lib/types'
+import { useMembershipVersion } from '../lib/membership'
+import { useMyGroups } from '../lib/useMyGroups'
 import { CreateGroupModal, JoinGroupModal } from './GroupDialogs'
 import { Logo } from './Logo'
 import { MemberAvatar } from './MemberAvatar'
@@ -98,7 +99,7 @@ function SidebarContent() {
                 Join
               </Button>
             </div>
-            <GroupList />
+            <GroupListKeyed />
           </>
         )}
       </div>
@@ -168,8 +169,13 @@ function SidebarContent() {
   )
 }
 
+function GroupListKeyed() {
+  const v = useMembershipVersion()
+  return <GroupList key={v} />
+}
+
 function GroupList() {
-  const { records, status } = useQuery<Group>('groups', { orderBy: 'createdAt', orderDir: 'asc' })
+  const { records, status } = useMyGroups('asc')
   const location = useLocation()
 
   return (

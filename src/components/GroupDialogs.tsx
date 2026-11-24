@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LIMITS } from '../config'
 import { useAction } from '../lib/api'
+import { bumpMembership } from '../lib/membership'
 import { Button, Input, Label, Modal, useToast } from './ui'
 
 export function CreateGroupModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -16,6 +17,7 @@ export function CreateGroupModal({ open, onClose }: { open: boolean; onClose: ()
     setError(null)
     const r = await run({ name })
     if (!r.success) return setError(r.error)
+    bumpMembership()
     toast.success('Group created', `Share code ${r.data.joinCode} with your classmates.`)
     setName('')
     onClose()
@@ -67,6 +69,7 @@ export function JoinGroupModal({ open, onClose }: { open: boolean; onClose: () =
     setError(null)
     const r = await run({ code })
     if (!r.success) return setError(r.error)
+    bumpMembership()
     toast.success(r.data.alreadyMember ? 'You’re already in this group' : 'Joined group')
     setCode('')
     onClose()
