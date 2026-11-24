@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useId, useRef, useState, type ReactNode } from 'react'
 import { usePresenceRoom, useQuery } from 'deepspace'
 import { ArrowRight, Check, Layers, Lock, Play, Timer, Trophy, Users, X, Zap } from 'lucide-react'
 import { callAction } from '@/lib/api'
@@ -147,20 +147,20 @@ function Segmented<T extends number>({
   onChange: (v: T) => void
   format: (v: T) => string
 }) {
+  const id = useId()
   return (
     <div className="space-y-1.5">
-      <p className="text-xs font-medium text-muted-foreground" id={`quiz-seg-${label}`}>
+      <p className="text-xs font-medium text-muted-foreground" id={id}>
         {label}
       </p>
-      <div role="radiogroup" aria-labelledby={`quiz-seg-${label}`} className="inline-flex rounded-lg border border-border bg-muted p-0.5">
+      <div role="group" aria-labelledby={id} className="inline-flex rounded-lg border border-border bg-muted p-0.5">
         {options.map((o) => {
           const on = o === value
           return (
             <button
               key={o}
               type="button"
-              role="radio"
-              aria-checked={on}
+              aria-pressed={on}
               onClick={() => onChange(o)}
               className={cn(
                 'h-8 min-w-12 rounded-md px-3 text-sm font-medium tabular-nums outline-none transition-colors duration-150 focus-visible:ring-[3px] focus-visible:ring-ring/50',
@@ -289,7 +289,7 @@ function LiveSession({
   myName: string
   clock: ServerClock
 }) {
-  const { peers, updateState } = usePresenceRoom(`quiz:${sessionId}`)
+  const { peers, connected, updateState } = usePresenceRoom(`quiz:${sessionId}`)
   const toast = useToast()
   const isHost = session.hostId === myId
   const { status, currentIndex: idx } = session
@@ -309,9 +309,12 @@ function LiveSession({
     sessionKeyRef.current = sessionKey
   }, [sessionKey])
 
+  // updateState is dropped while the socket is closed, so (re)send on connect
+  // and on every question change: -1 until the server accepts my answer.
+  const iAnswered = !!answered[idx]
   useEffect(() => {
-    updateState({ answered: -1 })
-  }, [updateState])
+    if (connected) updateState({ answered: iAnswered ? idx : -1 })
+  }, [connected, idx, iAnswered, updateState])
 
   const players = useMemo<Player[]>(() => {
     const seen = new Map<string, Player>()
@@ -373,11 +376,14 @@ function LiveSession({
         updateState({ answered: idx })
         return
       }
-      toast.error(r.error === 'Too late' ? 'Too late' : 'Answer not counted', r.error === 'Too late' ? 'Time ran out before your answer landed.' : r.error)
-      if (FINAL_SUBMIT_ERRORS.includes(r.error)) {
-        if (r.error === 'Already answered') setAnswered((a) => ({ ...a, [idx]: true }))
+      if (r.error === 'Already answered') {
+        toast.info('Already answered', 'Your earlier answer for this question counts.')
+        setAnswered((a) => ({ ...a, [idx]: true }))
         return
       }
+      if (r.error === 'Too late') toast.error('Too late', 'Time ran out before your answer landed.')
+      else toast.error('Answer not counted', r.error)
+      if (FINAL_SUBMIT_ERRORS.includes(r.error)) return
       setPicks((p) => {
         const next = { ...p }
         delete next[idx]
