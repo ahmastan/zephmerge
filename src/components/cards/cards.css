@@ -1,0 +1,108 @@
+/* Flashcard study mode: 3D flip, slide in/out, answer flash. */
+
+.zc-scene {
+  perspective: 1400px;
+}
+
+.zc-flipper {
+  display: grid;
+  transform-style: preserve-3d;
+  transition: transform 450ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.zc-flipper[data-flipped='true'] {
+  transform: rotateY(180deg);
+}
+
+/* Both faces share one grid cell so a long answer grows the card. */
+.zc-face {
+  grid-area: 1 / 1;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  /* Answer flash: background + ring tint. */
+  transition: background-color 200ms ease, box-shadow 200ms ease;
+}
+
+.zc-back {
+  transform: rotateY(180deg);
+}
+
+/* Slide the whole card between questions. */
+@keyframes zc-slide-in {
+  from { opacity: 0; transform: translateX(36px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes zc-slide-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateX(-36px) scale(0.98); }
+}
+
+.zc-enter {
+  animation: zc-slide-in 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.zc-leave {
+  animation: zc-slide-out 200ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.zc-pip {
+  transition: background-color 240ms ease, transform 240ms ease;
+}
+
+.zc-pip[data-on='true'][data-fresh='true'] {
+  transform: scale(1.25);
+}
+
+.zc-progress {
+  transition: width 300ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Reduced motion: no 3D, no sliding. Faces crossfade instead. */
+@media (prefers-reduced-motion: reduce) {
+  .zc-flipper,
+  .zc-flipper[data-flipped='true'] {
+    transform: none;
+    transition: none;
+  }
+  .zc-face {
+    transition: opacity 180ms linear, visibility 180ms linear, background-color 120ms linear;
+  }
+  .zc-back {
+    transform: none;
+    opacity: 0;
+  }
+  .zc-flipper[data-flipped='true'] .zc-front {
+    opacity: 0;
+    visibility: hidden;
+  }
+  .zc-flipper[data-flipped='true'] .zc-back {
+    opacity: 1;
+  }
+  .zc-flipper:not([data-flipped='true']) .zc-back {
+    visibility: hidden;
+  }
+  .zc-enter {
+    animation: zc-fade-in 160ms linear both;
+  }
+  .zc-leave {
+    animation: zc-fade-out 140ms linear both;
+  }
+  .zc-pip,
+  .zc-progress {
+    transition: none;
+  }
+  .zc-pip[data-on='true'][data-fresh='true'] {
+    transform: none;
+  }
+}
+
+@keyframes zc-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes zc-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
